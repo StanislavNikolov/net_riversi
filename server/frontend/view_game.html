@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			#board td {
+				width: 2.5rem;
+				height: 2.5rem;
+				padding: 0;
+				text-align: center;
+				background-color: blanchedalmond;
+			}
+			#board .cellid {
+				font-size: 0.5rem;
+			}
+			.player-0::before {
+				content: "⚪";
+			}
+			.player-1::before {
+				content: "⚫";
+			}
+			.selected {
+				background-color: aqua;
+			}
+		</style>
+	</head>
+
+	<body>
+		<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
+		<div id="started"></div>
+		<div id="board"></div>
+		<div id="events"></div>
+
+		<script>
+			let game = null;
+
+			const fmtDate = str => {
+				const date = new Date(str);
+				const month = String(date.getMonth()+1).padStart(2, '0');
+				const day = String(date.getDate()).padStart(2, '0');
+				return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getFullYear()}-${month}-${day}`;
+			}
+
+			const renderBoard = board => {
+				let renderedBoard = '';
+
+				renderedBoard += '<table>';
+				let cellId = 0;
+				for(let row of board) {
+					renderedBoard += '<tr>'
+					for(const square of row) {
+						renderedBoard += `
+						<td class="player-${square}"">
+							<span class="cellid">${cellId ++}</span>
+						</td>
+						`;
+					}
+					renderedBoard += '</tr>';
+				}
+				renderedBoard += '</table>';
+
+				return renderedBoard;
+			};
+
+			const renderEvents = events => {
+				if(events == null) {
+					return '';
+				}
+
+				let output = '';
+				for(const idx in events) {
+					output += `<div onclick="viewEvent(${idx})" id="event#${idx}" class="player-${events[idx].player}">${events[idx].message}</div>`;
+				}
+				return output;
+			};
+
+			const viewEvent = evIdx => {
+				document.getElementById('board').innerHTML = renderBoard(game.events[evIdx].currentBoard.squares);
+
+				// Unmark other events as selected.
+				for(const evEl of document.getElementById('events').childNodes) {
+					evEl.classList.remove('selected');
+				}
+
+				// Make this one selected.
+				document.getElementById(`event#${evIdx}`).classList.add('selected');
+			}
+
+			const gameId = (new URLSearchParams(window.location.search)).get('id');
+
+			fetch(`/api/game/${gameId}`)
+				.then(resp => resp.json())
+				.then(_game => {
+					game = _game;
+
+					document.getElementById('player-0').innerText = game.players[0];
+					document.getElementById('player-1').innerText = game.players[1];
+					document.getElementById('started').innerText = fmtDate(game.started);
+					document.getElementById('board').innerHTML = renderBoard(game.board.squares);
+					document.getElementById('events').innerHTML = renderEvents(game.events);
+				})
+		</script>
+	</body>
+</html>
