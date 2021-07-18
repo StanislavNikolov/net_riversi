@@ -209,7 +209,6 @@ func applyMove(square int, player int, board *Board) (bool, error) {
 	row := square / 8
 	col := square % 8
 
-	fmt.Println(row, col)
 	if board.Squares[row][col] != 255 {
 		return false, errors.New("non-empty square played")
 	}
@@ -219,6 +218,8 @@ func applyMove(square int, player int, board *Board) (bool, error) {
 		return false, errors.New("not allowed to place on that sqaure")
 	}
 	board.Squares[row][col] = player
+
+	// TODO flip pieces
 
 	// check if the other player has any moves possible
 	return AllowedSquare(board, row, col, nextPlayer(player)), nil
