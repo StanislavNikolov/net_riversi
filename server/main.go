@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"riversi_server/riversi"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,22 +26,22 @@ type Client struct {
 }
 
 type GameEvent struct {
-	Player       int       `json:"player"`
-	Message      string    `json:"message"`
-	Time         time.Time `json:"time"`
-	CurrentBoard Board     `json:"currentBoard"`
+	Player       int           `json:"player"`
+	Message      string        `json:"message"`
+	Time         time.Time     `json:"time"`
+	CurrentBoard riversi.Board `json:"currentBoard"`
 }
 
 type GameSession struct {
-	Board   Board       `json:"board"`
-	Events  []GameEvent `json:"events"`
-	Players [2]string   `json:"players"`
-	Started time.Time   `json:"started"`
+	Board   riversi.Board `json:"board"`
+	Events  []GameEvent   `json:"events"`
+	Players [2]string     `json:"players"`
+	Started time.Time     `json:"started"`
 }
 
 func newGameSession(playerA string, playerB string) GameSession {
 	var game GameSession
-	game.Board = NewBoard()
+	game.Board = riversi.NewBoard()
 	game.Players = [2]string{playerA, playerB}
 	game.Started = time.Now()
 	return game
@@ -205,28 +206,32 @@ func nextPlayer(currentPlayer int) int {
 	return (currentPlayer + 1) % 2
 }
 
-func applyMove(square int, player int, board *Board) (bool, error) {
+func applyMove(square int, player int, board *riversi.Board) (bool, error) {
 	row := square / 8
 	col := square % 8
 
+	// Technically this if is not needed, but provides more verbose output.
 	if board.Squares[row][col] != 255 {
 		return false, errors.New("non-empty square played")
 	}
 
-	// check if player should be allowed to play there
-	if !AllowedSquare(board, row, col, player) {
+	// Check if player should be allowed to play there.
+	if !board.IsSquareAllowed(row, col, player) {
 		return false, errors.New("not allowed to place on that sqaure")
 	}
+
 	board.Squares[row][col] = player
+	for _, coord := range board.GetSquaresToBeFlipped(row, col, player) {
+		board.Squares[coord[0]][coord[1]] = player
+	}
 
-	// TODO flip pieces
-
-	// check if the other player has any moves possible
-	return AllowedSquare(board, row, col, nextPlayer(player)), nil
+	return board.CheckPossibleMovesExist(nextPlayer(player)), nil
 }
 
 func fight(clientA *Client, clientB *Client) {
 	game := newGameSession(clientA.token, clientB.token)
+
+	game.log(255, "Starting game")
 
 	gameSessionsMutex.Lock()
 	gameSessions = append(gameSessions, &game)
@@ -239,24 +244,28 @@ func fight(clientA *Client, clientB *Client) {
 	for {
 		square, timeTaken, err := getMoveFromClient(players[playerOnTurn], playerOnTurn, &game)
 		if err != nil {
-			message := fmt.Sprintf("Player %d lost due to a network error. Reason: %s", playerOnTurn, err)
+			message := fmt.Sprintf("Player %d lost due to a communication error. Reason: %s", playerOnTurn, err)
 			game.log(playerOnTurn, message)
 			break
 		}
 
+		goToNextPlayer, err := applyMove(square, playerOnTurn, &game.Board)
+
 		message := fmt.Sprintf("Player %d made move on square %d in %s", playerOnTurn, square, timeTaken)
 		game.log(playerOnTurn, message)
 
-		goToNextPlayer, err := applyMove(square, playerOnTurn, &game.Board)
 		if err != nil {
 			message := fmt.Sprintf("Player %d lost. Reason: %s", playerOnTurn, err)
-			game.log(playerOnTurn, message)
+			game.log(255, message)
 			loser = playerOnTurn
 			break
 		}
 
 		if goToNextPlayer {
 			playerOnTurn = nextPlayer(playerOnTurn)
+		} else {
+			message := fmt.Sprintf("Skipping turn because player %d has no possible moves", nextPlayer(playerOnTurn))
+			game.log(255, message)
 		}
 	}
 

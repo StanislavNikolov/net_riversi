@@ -18,6 +18,9 @@
 			.player-1::before {
 				content: "⚫";
 			}
+			.info::before {
+				content: "ℹ️";
+			}
 			.selected {
 				background-color: aqua;
 			}
@@ -68,7 +71,10 @@
 
 				let output = '';
 				for(const idx in events) {
-					output += `<div onclick="viewEvent(${idx})" id="event#${idx}" class="player-${events[idx].player}">${events[idx].message}</div>`;
+					const ev = events[idx];
+					let className = ev.player === 255 ? 'info' : `player-${ev.player}`;
+
+					output += `<div onclick="viewEvent(${idx})" id="event#${idx}" class="${className}">${ev.message}</div>`;
 				}
 				return output;
 			};
