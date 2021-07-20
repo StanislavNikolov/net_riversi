@@ -30,6 +30,7 @@ type GameEvent struct {
 	Message      string        `json:"message"`
 	Time         time.Time     `json:"time"`
 	CurrentBoard riversi.Board `json:"currentBoard"`
+	Score        int           `json:"score"`
 }
 
 type GameSession struct {
@@ -53,11 +54,17 @@ func (game *GameSession) log(player int, message string) {
 		Message:      message,
 		Time:         time.Now(),
 		CurrentBoard: game.Board,
+		Score:        game.Board.GetScore(),
 	}
 	game.Events = append(game.Events, event)
 }
 
 func main() {
+	go SetupBotServer()
+	go SetupHttpServer()
+}
+
+func SetupBotServer() {
 	listenSocket, err := net.Listen("tcp", ":8081")
 
 	if err != nil {
@@ -66,8 +73,6 @@ func main() {
 	}
 	defer listenSocket.Close()
 	fmt.Println("Waiting for bots on localhost:8081")
-
-	go SetupHttpServer()
 
 	go makeMatches()
 
@@ -199,7 +204,7 @@ func (game GameSession) geTimeLeftForPlayer(player int) time.Duration {
 
 		return bonusTime - totalTimeTaken
 	*/
-	return 5000 * time.Millisecond
+	return 45000 * time.Millisecond
 }
 
 func nextPlayer(currentPlayer int) int {
@@ -260,6 +265,7 @@ func fight(clientA *Client, clientB *Client) {
 
 		square, timeTaken, err := getMoveFromClient(players[playerOnTurn], playerOnTurn, &game)
 		if err != nil {
+			loser = playerOnTurn
 			message := fmt.Sprintf("Player %d lost due to a communication error. Reason: %s", playerOnTurn, err)
 			game.log(playerOnTurn, message)
 			break
@@ -271,6 +277,7 @@ func fight(clientA *Client, clientB *Client) {
 		game.log(playerOnTurn, message)
 
 		if err != nil {
+			loser = playerOnTurn
 			message := fmt.Sprintf("Player %d lost. Reason: %s", playerOnTurn, err)
 			game.log(255, message)
 			loser = playerOnTurn
@@ -287,18 +294,14 @@ func fight(clientA *Client, clientB *Client) {
 
 	if loser == -1 {
 		game.log(255, "Game over. Draw.")
-		players[0].conn.Write([]byte("CTRL 😐 It was a draw!\n"))
-		players[0].conn.Write([]byte("EXIT\n"))
-		players[1].conn.Write([]byte("CTRL 😐 It was a draw!\n"))
-		players[1].conn.Write([]byte("EXIT\n"))
+		players[0].conn.Write([]byte("CTRL 😐 It was a draw!\nEXIT\n"))
+		players[1].conn.Write([]byte("CTRL 😐 It was a draw!\nEXIT\n"))
 		return
 	}
 
 	winner := nextPlayer(loser)
 	game.log(255, fmt.Sprintf("Game over. Player %d won.", winner))
 
-	players[loser].conn.Write([]byte("CTRL 😢 You lost!\n"))
-	players[loser].conn.Write([]byte("EXIT\n"))
-	players[winner].conn.Write([]byte("CTRL 😃 You won!\n"))
-	players[winner].conn.Write([]byte("EXIT\n"))
+	players[loser].conn.Write([]byte("CTRL 😢 You lost!\nEXIT\n"))
+	players[winner].conn.Write([]byte("CTRL 😃 You won!\nEXIT\n"))
 }

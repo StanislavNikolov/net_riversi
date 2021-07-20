@@ -50,8 +50,9 @@ func play(conn net.Conn, botBinary string) {
 
 	log.Println("Waiting for game to start...")
 
+	serverReader := bufio.NewReader(conn)
 	for {
-		dataFromServer, err := bufio.NewReader(conn).ReadString('\n')
+		dataFromServer, err := serverReader.ReadString('\n')
 
 		if err != nil {
 			log.Println(color.RedString("Failed to talk with server. Maybe you lost connection?"), err)
@@ -79,7 +80,7 @@ func play(conn net.Conn, botBinary string) {
 		reader := bufio.NewReader(stdout)
 		slurp, err := reader.ReadString('\n')
 		if err != nil {
-			log.Println(color.RedString("Failed to read from bot"))
+			log.Println(color.RedString("Failed to read from bot. Have you flushed with 'cout << endl'?"))
 			break
 		}
 

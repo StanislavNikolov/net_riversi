@@ -24,14 +24,30 @@
 			.selected {
 				background-color: aqua;
 			}
+
+			body {
+				display: flex;
+				flex-direction: row;
+			}
+			.pane {
+				width: 50%;
+				margin: 0;
+				overflow-y: scroll;
+				height: 100vh;
+			}
 		</style>
 	</head>
 
 	<body>
-		<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
-		<div id="started"></div>
-		<div id="board"></div>
-		<div id="events"></div>
+		<div class="pane left">
+			<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
+			<div id="started"></div>
+			<div id="board"></div>
+			Score: <span id="score"></span>
+		</div>
+		<div class="pane right">
+			<div id="events"></div>
+		</div>
 
 		<script>
 			let game = null;
@@ -74,7 +90,7 @@
 					const ev = events[idx];
 					let className = ev.player === 255 ? 'info' : `player-${ev.player}`;
 
-					output += `<div onclick="viewEvent(${idx})" id="event#${idx}" class="${className}">${ev.message}</div>`;
+					output += `<div id="event#${idx}" class="${className}">${ev.message}</div>`;
 				}
 				return output;
 			};
@@ -89,21 +105,33 @@
 
 				// Make this one selected.
 				document.getElementById(`event#${evIdx}`).classList.add('selected');
+
+				document.getElementById('score').innerText = game.events[evIdx].score;
 			}
 
 			const gameId = (new URLSearchParams(window.location.search)).get('id');
 
 			fetch(`/api/game/${gameId}`)
-				.then(resp => resp.json())
-				.then(_game => {
-					game = _game;
+			.then(resp => resp.json())
+			.then(_game => {
+				game = _game;
 
-					document.getElementById('player-0').innerText = game.players[0];
-					document.getElementById('player-1').innerText = game.players[1];
-					document.getElementById('started').innerText = fmtDate(game.started);
-					document.getElementById('board').innerHTML = renderBoard(game.board.squares);
-					document.getElementById('events').innerHTML = renderEvents(game.events);
-				})
+				document.getElementById('player-0').innerText = game.players[0];
+				document.getElementById('player-1').innerText = game.players[1];
+				document.getElementById('started').innerText = fmtDate(game.started);
+				document.getElementById('events').innerHTML = renderEvents(game.events);
+
+				viewEvent(game.events.length-1);
+			});
+
+			document.getElementById('events').addEventListener('mouseover', ev => {
+				const eventEl = ev.target;
+				if (!eventEl.id.startsWith('event#')) {
+					return;
+				}
+
+				viewEvent(eventEl.id.substr( "event#".length ))
+			});
 		</script>
 	</body>
 </html>
