@@ -22,7 +22,7 @@
 
 					for (const game of games) {
 						document.body.innerHTML += `
-						<a href="/view_game.html?id=${game.id}">${fmtDate(game.started)} ${game.players[0]} vs. ${game.players[1]}</a>
+						<a href="/view_game.html?id=${game.id}">${fmtDate(game.started)} ${game.players[0]} vs. ${game.players[1]}</a> <br>
 						`;
 						console.log(game);
 					}
