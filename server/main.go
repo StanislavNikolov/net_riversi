@@ -155,7 +155,7 @@ func getMoveFromClient(client *Client, player int, game *GameSession) (int, time
 
 	endTime := time.Now()
 
-	return square, endTime.Sub(beginTime), nil // remove newline at the end of the answer
+	return square, endTime.Sub(beginTime), nil
 }
 
 func (game GameSession) serializeFromPerspective(player int) string {
@@ -242,6 +242,22 @@ func fight(clientA *Client, clientB *Client) {
 
 	var loser int
 	for {
+		possible_to_play := game.Board.CheckPossibleMovesExist(playerOnTurn)
+		if !possible_to_play {
+			// No moves left. Find the winner
+			score := game.Board.GetScore()
+			if score > 0 {
+				loser = 1
+			}
+			if score == 0 {
+				loser = -1
+			}
+			if score < 0 {
+				loser = 0
+			}
+			break
+		}
+
 		square, timeTaken, err := getMoveFromClient(players[playerOnTurn], playerOnTurn, &game)
 		if err != nil {
 			message := fmt.Sprintf("Player %d lost due to a communication error. Reason: %s", playerOnTurn, err)
@@ -269,8 +285,20 @@ func fight(clientA *Client, clientB *Client) {
 		}
 	}
 
-	winner := nextPlayer(loser)
+	if loser == -1 {
+		game.log(255, "Game over. Draw.")
+		players[0].conn.Write([]byte("CTRL 😐 It was a draw!\n"))
+		players[0].conn.Write([]byte("EXIT\n"))
+		players[1].conn.Write([]byte("CTRL 😐 It was a draw!\n"))
+		players[1].conn.Write([]byte("EXIT\n"))
+		return
+	}
 
-	players[loser].conn.Write([]byte("CTRL 😢 You lost!"))
-	players[winner].conn.Write([]byte("CTRL 😃 You won!"))
+	winner := nextPlayer(loser)
+	game.log(255, fmt.Sprintf("Game over. Player %d won.", winner))
+
+	players[loser].conn.Write([]byte("CTRL 😢 You lost!\n"))
+	players[loser].conn.Write([]byte("EXIT\n"))
+	players[winner].conn.Write([]byte("CTRL 😃 You won!\n"))
+	players[winner].conn.Write([]byte("EXIT\n"))
 }

@@ -9,9 +9,15 @@
 		<script>
 			const fmtDate = str => {
 				const date = new Date(str);
+
+				const hour = String(date.getHours()).padStart(2, '0');
+				const minute = String(date.getMinutes()).padStart(2, '0');
+				const seconds = String(date.getSeconds()).padStart(2, '0');
+
 				const month = String(date.getMonth()+1).padStart(2, '0');
 				const day = String(date.getDate()).padStart(2, '0');
-				return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getFullYear()}-${month}-${day}`;
+
+				return `${hour}:${minute}:${seconds} ${date.getFullYear()}-${month}-${day}`;
 			}
 			fetch('/api/games')
 				.then(resp => resp.json())
@@ -20,11 +26,12 @@
 						return;
 					}
 
-					for (const game of games) {
+					for (let idx = games.length-1;idx >= 0;idx --) {
+						const game = games[idx];
+
 						document.body.innerHTML += `
-						<a href="/view_game.html?id=${game.id}">${fmtDate(game.started)} ${game.players[0]} vs. ${game.players[1]}</a> <br>
+						${fmtDate(game.started)} <a href="/view_game.html?id=${game.id}">${game.players[0]} vs. ${game.players[1]}</a> <br>
 						`;
-						console.log(game);
 					}
 				})
 		</script>

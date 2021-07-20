@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"io"
 	"log"
 	"net"
@@ -10,6 +11,8 @@ import (
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 func login(conn net.Conn, botBinary string) {
@@ -21,7 +24,7 @@ func login(conn net.Conn, botBinary string) {
 	username := user.Username
 	token := "asd"
 	login_packet := token + " " + username + "#" + botBinary
-	log.Println("Logged in with:", login_packet)
+	log.Println("Logged in with:", username)
 	conn.Write([]byte(login_packet + "\n"))
 }
 
@@ -44,42 +47,43 @@ func play(conn net.Conn, botBinary string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Bot started")
 
 	log.Println("Waiting for game to start...")
 
 	for {
 		dataFromServer, err := bufio.NewReader(conn).ReadString('\n')
 
-		if strings.HasPrefix(dataFromServer, "CTRL") {
-			// This is a special packet from server, not meant for the bot
-			log.Println(dataFromServer)
-			break
-		}
-
 		if err != nil {
-			log.Println("Failed to read from server", err)
+			log.Println(color.RedString("Failed to talk with server. Maybe you lost connection?"), err)
 			break
 		}
 
-		log.Println("Got this from server:", dataFromServer)
+		// The following are special packets not meant for the bot
+		if strings.HasPrefix(dataFromServer, "CTRL") {
+			log.Println(color.BlueString(dataFromServer))
+			continue
+		}
+
+		if strings.HasPrefix(dataFromServer, "EXIT") {
+			break
+		}
+
+		log.Printf("server -> bot:%s", color.YellowString(dataFromServer))
 
 		_, err = io.WriteString(stdin, dataFromServer)
 		if err != nil {
-			log.Println("Failed to send to bot")
+			log.Println(color.RedString("Failed to talk with your bot. Maybe it crashed?"))
 			break
 		}
-
-		log.Println("Sent to bot")
 
 		reader := bufio.NewReader(stdout)
 		slurp, err := reader.ReadString('\n')
 		if err != nil {
-			log.Println("Failed to read from bot")
+			log.Println(color.RedString("Failed to read from bot"))
 			break
 		}
 
-		log.Println("Got this from bot:", slurp)
+		log.Printf("server <- bot:%s", color.YellowString(slurp))
 
 		conn.Write([]byte(slurp))
 
@@ -92,8 +96,14 @@ func play(conn net.Conn, botBinary string) {
 }
 
 func main() {
-	server := "localhost:8081"
-	botBinary := "./bot"
+	var server string
+	var botBinary string
+	var loop bool
+
+	flag.StringVar(&server, "server", "localhost:8081", "Address of the server to connect to. For example: 192.168.0.123:8081")
+	flag.StringVar(&botBinary, "bot", "./bot", "Location of the executable binary to play with")
+	flag.BoolVar(&loop, "loop", false, "Automatically start a new game after the last one ended")
+	flag.Parse()
 
 	for {
 		conn, err := net.Dial("tcp", server)
@@ -102,15 +112,16 @@ func main() {
 			log.Fatalln("Error connecting:", err.Error())
 		}
 
-		log.Println("Connected to game server at", server)
-
 		login(conn, botBinary)
 
 		log.Println("-----------------------")
 		play(conn, botBinary)
-		log.Println("Game endeded. Starting a new one in 5 seconds")
-		log.Println("-----------------------")
 
+		if !loop {
+			break
+		}
+
+		log.Println("Starting a new game in 5 seconds")
 		time.Sleep(time.Second * 5)
 	}
 

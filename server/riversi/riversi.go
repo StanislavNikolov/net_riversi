@@ -25,7 +25,7 @@ func NewBoard() Board {
 func (board *Board) GetSquaresToBeFlipped(row int, col int, player int) [][2]int {
 	directions := [8][2]int{
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
-		{1, 1}, {-1, 1}, {1, -1}, {-1, 1},
+		{1, 1}, {-1, -1}, {1, -1}, {-1, 1},
 	}
 
 	var output [][2]int
@@ -69,4 +69,19 @@ func (board *Board) CheckPossibleMovesExist(player int) bool {
 		}
 	}
 	return false
+}
+
+func (board *Board) GetScore() int {
+	score := 0
+	for row := 0; row < 8; row++ {
+		for col := 0; col < 8; col++ {
+			if board.Squares[row][col] == 0 {
+				score++
+			}
+			if board.Squares[row][col] == 1 {
+				score--
+			}
+		}
+	}
+	return score
 }
