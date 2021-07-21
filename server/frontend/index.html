@@ -18,7 +18,15 @@
 				const day = String(date.getDate()).padStart(2, '0');
 
 				return `${hour}:${minute}:${seconds} ${date.getFullYear()}-${month}-${day}`;
-			}
+			};
+
+			const htmlToElement = html => {
+				var template = document.createElement('template');
+				html = html.trim(); // Never return a text node of whitespace as the result
+				template.innerHTML = html;
+				return template.content.childNodes;
+			};
+
 			fetch('/api/games')
 				.then(resp => resp.json())
 				.then(games => {
@@ -26,12 +34,18 @@
 						return;
 					}
 
-					for (let idx = games.length-1;idx >= 0;idx --) {
-						const game = games[idx];
+					for (const idx in games) {
+						const game = JSON.parse(games[idx].data);
+						game.id = games[idx].id;
 
-						document.body.innerHTML += `
-						${fmtDate(game.started)} <a href="/view_game.html?id=${game.id}">${game.players[0]} vs. ${game.players[1]}</a> <br>
+						const html = `
+							${fmtDate(game.started)}
+							<a href="/view_game.html?id=${game.id}">${game.players[0]} vs. ${game.players[1]}</a>
+							<br>
 						`;
+						//console.log(html);
+						document.body.insertAdjacentHTML('beforeend', html);
+						//document.body.appendChild(htmlToElement(html));
 					}
 				})
 		</script>

@@ -40,6 +40,7 @@
 
 	<body>
 		<div class="pane left">
+			<h1> <a href="/">Go back to the list </a> </h1>
 			<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
 			<div id="started"></div>
 			<div id="board"></div>
@@ -50,8 +51,6 @@
 		</div>
 
 		<script>
-			let game = null;
-
 			const fmtDate = str => {
 				const date = new Date(str);
 				const month = String(date.getMonth()+1).padStart(2, '0');
@@ -110,18 +109,31 @@
 			}
 
 			const gameId = (new URLSearchParams(window.location.search)).get('id');
+			let game = {events: []};
+
+			fetch(`/api/events/${gameId}`)
+			.then(resp => resp.json())
+			.then(ugly_events => {
+				game = {events: []};
+				for(const s of ugly_events) {
+					game.events.push(JSON.parse(s));
+				}
+
+				document.getElementById('events').innerHTML = renderEvents(game.events);
+
+				viewEvent(game.events.length-1);
+			});
 
 			fetch(`/api/game/${gameId}`)
 			.then(resp => resp.json())
-			.then(_game => {
-				game = _game;
+			.then(ugly_game => {
+				console.log(ugly_game)
+				const _game = JSON.parse(ugly_game);
+				Object.assign(game, _game);
 
 				document.getElementById('player-0').innerText = game.players[0];
 				document.getElementById('player-1').innerText = game.players[1];
 				document.getElementById('started').innerText = fmtDate(game.started);
-				document.getElementById('events').innerHTML = renderEvents(game.events);
-
-				viewEvent(game.events.length-1);
 			});
 
 			document.getElementById('events').addEventListener('mouseover', ev => {

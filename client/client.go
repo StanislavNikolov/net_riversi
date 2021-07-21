@@ -22,9 +22,8 @@ func login(conn net.Conn, botBinary string) {
 	}
 
 	username := user.Username
-	token := "asd"
-	login_packet := token + " " + username + "#" + botBinary
-	log.Println("Logged in with:", username)
+	login_packet := username + "#" + botBinary
+	log.Println("Logged in with:", login_packet)
 	conn.Write([]byte(login_packet + "\n"))
 }
 
