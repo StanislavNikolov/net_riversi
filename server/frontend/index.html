@@ -33,14 +33,12 @@
 					if(games == null) {
 						return;
 					}
+					console.log(games);
 
-					for (const idx in games) {
-						const game = JSON.parse(games[idx].data);
-						game.id = games[idx].id;
-
+					for (const game of games) {
 						const html = `
-							${fmtDate(game.started)}
-							<a href="/view_game.html?id=${game.id}">${game.players[0]} vs. ${game.players[1]}</a>
+							${fmtDate(game.startedAt)}
+							<a href="/view_game.html?id=${game.id}">${game.player0} vs. ${game.player1}</a>
 							<br>
 						`;
 						//console.log(html);

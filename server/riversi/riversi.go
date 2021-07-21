@@ -1,5 +1,10 @@
 package riversi
 
+import (
+	"database/sql/driver"
+	"errors"
+)
+
 type Board struct {
 	// Allowed values: 0, 1, 255 TODO: make it an enum
 	Squares [8][8]int `json:"squares"`
@@ -84,4 +89,50 @@ func (board *Board) GetScore() int {
 		}
 	}
 	return score
+}
+
+func (board Board) Value() (driver.Value, error) {
+	var output string
+	for row := 0; row < 8; row++ {
+		for col := 0; col < 8; col++ {
+			if board.Squares[row][col] == 255 {
+				output += "E"
+			}
+			if board.Squares[row][col] == 0 {
+				output += "W"
+			}
+			if board.Squares[row][col] == 1 {
+				output += "B"
+			}
+		}
+	}
+	return driver.Value(output), nil
+}
+
+func (board *Board) Scan(src interface{}) error {
+	var source string
+
+	switch src.(type) {
+	case string:
+		source = src.(string)
+	default:
+		return errors.New("incompatible type for riversi.Board")
+	}
+
+	if len(source) != 64 {
+		return errors.New("source string should be exactly 64 characters to be a valid board")
+	}
+
+	for i, char := range source {
+		player := 255
+		if char == 'W' {
+			player = 0
+		}
+		if char == 'B' {
+			player = 1
+		}
+		board.Squares[i/8][i%8] = player
+	}
+
+	return nil
 }
