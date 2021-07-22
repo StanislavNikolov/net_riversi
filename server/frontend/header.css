@@ -1,0 +1,25 @@
+/* https://visme.co/blog/website-color-schemes/ 12 */
+body {
+	margin: 0;
+	font-family: sans-serif;
+}
+header {
+	background-color: #0B0C10;
+	color: white;
+	padding: 1rem;
+	position: sticky;
+	top: 0px;
+}
+.item {
+	padding: 1rem;
+}
+.item.active {
+	background-color: #C5C6C7;
+	color: black;
+}
+.item:not(.active):hover {
+	background-color: #1F2833;
+}
+main {
+	padding: 1rem;
+}

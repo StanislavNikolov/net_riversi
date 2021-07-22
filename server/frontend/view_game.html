@@ -1,16 +1,33 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<link rel="stylesheet" href="/header.css">
+
 		<style>
 			#board td {
-				width: 2.5rem;
-				height: 2.5rem;
+				width: 4.0rem;
+				height: 4.0rem;
+				font-size: 3rem;
 				padding: 0;
 				text-align: center;
-				background-color: blanchedalmond;
+				background-color: burlywood;
+				position: relative;
 			}
 			#board .cellid {
-				font-size: 0.5rem;
+				font-size: 1.0rem;
+				position: absolute;
+				bottom: 0;
+				right: 0;
+			}
+			#board table {
+				box-shadow: 8px 9px 11px -1px rgba(0,0,0,0.79);
+				display: inline-block;
+			}
+			#board {
+				padding: 1rem;
+			}
+			#board .highlight {
+				background-color: blanchedalmond;
 			}
 			.player-0::before {
 				content: "⚪";
@@ -25,7 +42,7 @@
 				background-color: aqua;
 			}
 
-			body {
+			main {
 				display: flex;
 				flex-direction: row;
 			}
@@ -39,16 +56,26 @@
 	</head>
 
 	<body>
-		<div class="pane left">
-			<h1> <a href="/">⬅️ Go back to the list </a> </h1>
-			<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
-			<div id="started"></div>
-			<div id="board"></div>
-			Score: <span id="score"></span>
-		</div>
-		<div class="pane right">
-			<div id="events"></div>
-		</div>
+		<header>
+			<span onclick="window.location='/'" class="item">Home</span>
+			<span onclick="window.location='/list_games.html'" class="item active">Games</span>
+			<span onclick="window.location='/ranking.html'" class="item">Ranking</span>
+		</header>
+
+		<main>
+
+			<div class="pane left">
+				<h3> <a href="list_games.html">⬅️ Go back to the list </a> </h3>
+				<span id="player-0" class="player-0"></span> vs. <span id="player-1" class="player-1"></span>
+				<div id="started"></div>
+				<div id="board"></div>
+				Score: <span id="score"></span>
+			</div>
+			<div class="pane right">
+				<div id="events"></div>
+			</div>
+
+		</main>
 
 		<script>
 			const fmtDate = str => {
@@ -58,7 +85,7 @@
 				return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${date.getFullYear()}-${month}-${day}`;
 			}
 
-			const renderBoard = board => {
+			const renderBoard = (board, highlight) => {
 				let renderedBoard = '';
 
 				renderedBoard += '<table>';
@@ -67,7 +94,7 @@
 					renderedBoard += '<tr>'
 					for(const square of row) {
 						renderedBoard += `
-						<td class="player-${square}"">
+						<td class="player-${square} ${highlight==cellId ? 'highlight' : ''}">
 							<span class="cellid">${cellId ++}</span>
 						</td>
 						`;
@@ -95,7 +122,16 @@
 			};
 
 			const viewEvent = evIdx => {
-				document.getElementById('board').innerHTML = renderBoard(game.events[evIdx].currentBoard.squares);
+				const event = game.events[evIdx];
+
+				// Check if a square can be highlighted.
+				let highlight = null;
+				if(event.message.includes('made move on square')) {
+					highlight = Number(event.message.split(' ')[6]);
+				}
+
+				// Show the board.
+				document.getElementById('board').innerHTML = renderBoard(event.currentBoard.squares, highlight);
 
 				// Unmark other events as selected.
 				for(const evEl of document.getElementById('events').childNodes) {
@@ -105,7 +141,7 @@
 				// Make this one selected.
 				document.getElementById(`event#${evIdx}`).classList.add('selected');
 
-				document.getElementById('score').innerText = game.events[evIdx].score;
+				document.getElementById('score').innerText = event.score;
 			}
 
 			const gameId = (new URLSearchParams(window.location.search)).get('id');
@@ -118,7 +154,7 @@
 
 				document.getElementById('events').innerHTML = renderEvents(game.events);
 
-				viewEvent(game.events.length-1);
+				viewEvent(0);
 			});
 
 			fetch(`/api/game/${gameId}`)

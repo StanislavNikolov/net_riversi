@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="/header.css">
+	</head>
+
+	<body>
+		<header>
+			<span onclick="window.location='/'" class="item">Home</span>
+			<span onclick="window.location='/list_games.html'" class="item active">Games</span>
+			<span onclick="window.location='/ranking.html'" class="item">Ranking</span>
+		</header>
+
+		<main>
+		</main>
+
+		<script>
+			const fmtDate = str => {
+				const date = new Date(str);
+
+				const hour = String(date.getHours()).padStart(2, '0');
+				const minute = String(date.getMinutes()).padStart(2, '0');
+				const seconds = String(date.getSeconds()).padStart(2, '0');
+
+				const month = String(date.getMonth()+1).padStart(2, '0');
+				const day = String(date.getDate()).padStart(2, '0');
+
+				return `${hour}:${minute}:${seconds} ${date.getFullYear()}-${month}-${day}`;
+			};
+
+			fetch('/api/games')
+				.then(resp => resp.json())
+				.then(games => {
+					if(games == null) {
+						return;
+					}
+					console.log(games);
+
+					const listEl = document.getElementsByTagName('main')[0];
+					for (const game of games) {
+						const html = `
+							${fmtDate(game.startedAt)}
+							<a href="/view_game.html?id=${game.id}">${game.player0} vs. ${game.player1}</a>
+							<br>
+						`;
+						listEl.insertAdjacentHTML('beforeend', html);
+					}
+				})
+		</script>
+	</body>
+</html>

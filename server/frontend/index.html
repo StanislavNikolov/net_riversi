@@ -1,51 +1,30 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<style>
-		</style>
+		<link rel="stylesheet" href="/header.css">
 	</head>
-
 	<body>
-		<script>
-			const fmtDate = str => {
-				const date = new Date(str);
+		<header>
+			<span onclick="window.location='/'" class="item active">Home</span>
+			<span onclick="window.location='/list_games.html'" class="item">Games</span>
+			<span onclick="window.location='/ranking.html'" class="item">Ranking</span>
+		</header>
 
-				const hour = String(date.getHours()).padStart(2, '0');
-				const minute = String(date.getMinutes()).padStart(2, '0');
-				const seconds = String(date.getSeconds()).padStart(2, '0');
+		<main>
+			<h2>Rules of reversi</h2>
+			<p>
+				TODO
+			</p>
 
-				const month = String(date.getMonth()+1).padStart(2, '0');
-				const day = String(date.getDate()).padStart(2, '0');
+			<h2>Set up</h2>
+			<p>
+				TODO
+			</p>
 
-				return `${hour}:${minute}:${seconds} ${date.getFullYear()}-${month}-${day}`;
-			};
-
-			const htmlToElement = html => {
-				var template = document.createElement('template');
-				html = html.trim(); // Never return a text node of whitespace as the result
-				template.innerHTML = html;
-				return template.content.childNodes;
-			};
-
-			fetch('/api/games')
-				.then(resp => resp.json())
-				.then(games => {
-					if(games == null) {
-						return;
-					}
-					console.log(games);
-
-					for (const game of games) {
-						const html = `
-							${fmtDate(game.startedAt)}
-							<a href="/view_game.html?id=${game.id}">${game.player0} vs. ${game.player1}</a>
-							<br>
-						`;
-						//console.log(html);
-						document.body.insertAdjacentHTML('beforeend', html);
-						//document.body.appendChild(htmlToElement(html));
-					}
-				})
-		</script>
+			<h2>How to write your bot</h2>
+			<p>
+				TODO
+			</p>
+		</main>
 	</body>
 </html>
