@@ -23,12 +23,14 @@ type GameSession struct {
 	Player0   string    `json:"player0"`
 	Player1   string    `json:"player1"`
 	StartedAt time.Time `json:"startedAt" db:"started_at"`
+	Winner    int       `json:"winner" db:"winner"`
 	board     riversi.Board
 }
 
 func newGameSession(player0 string, player1 string) GameSession {
 	var game GameSession
 	game.board = riversi.NewBoard()
+	game.Winner = -2
 	game.Player0 = player0
 	game.Player1 = player1
 	game.StartedAt = time.Now()
@@ -66,6 +68,7 @@ func prepareDatabase() {
 			id INTEGER NOT NULL PRIMARY KEY,
 			player0 TEXT,
 			player1 TEXT,
+			winner INTEGER,
 			started_at DATETIME
 		);
 		CREATE TABLE game_events (

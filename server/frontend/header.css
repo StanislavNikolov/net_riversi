@@ -23,3 +23,13 @@ header {
 main {
 	padding: 1rem;
 }
+
+.player-0::before {
+	content: "⚪";
+}
+.player-1::before {
+	content: "⚫";
+}
+.info::before {
+	content: "ℹ️";
+}

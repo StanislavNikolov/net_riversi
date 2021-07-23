@@ -2,28 +2,50 @@ package main
 
 import (
 	"bufio"
+	"crypto/md5"
+	"encoding/base64"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
 )
 
-func login(conn net.Conn, botBinary string) {
+func login(conn net.Conn, botBinaryPath string) {
 	user, err := user.Current()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
+	// Calculate md5 hash of the binary
+	file, err := os.Open(botBinaryPath)
+	if err != nil {
+		fmt.Println(color.RedString("Failed to read your bot"))
+		os.Exit(3)
+	}
+	fileReader := bufio.NewReader(file)
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, fileReader); err != nil {
+		log.Fatal(err)
+	}
+	sum := hash.Sum(nil)
+	base64hash := base64.StdEncoding.EncodeToString(sum)
+
+	botName := filepath.Base(botBinaryPath)
+
 	username := user.Username
-	login_packet := username + "#" + botBinary
-	log.Println("Logged in with:", login_packet)
+	login_packet := username + "#" + botName + "#" + base64hash[:5]
+
+	log.Println("Logged in with:", color.YellowString(login_packet))
 	conn.Write([]byte(login_packet + "\n"))
 }
 
@@ -114,7 +136,6 @@ func main() {
 
 		login(conn, botBinary)
 
-		log.Println("-----------------------")
 		play(conn, botBinary)
 
 		if !loop {

@@ -34,13 +34,19 @@
 					if(games == null) {
 						return;
 					}
-					console.log(games);
 
 					const listEl = document.getElementsByTagName('main')[0];
+
 					for (const game of games) {
+						let gameStatus = '<span>in progress</span>';
+						if(game.winner ===  0) gameStatus = '<span class="player-0">finished</span>';
+						if(game.winner ===  1) gameStatus = '<span class="player-1">finished</span>';
+						if(game.winner === -1) gameStatus = '<span class="xxxxxxxx">finished</span>';
+
 						const html = `
 							${fmtDate(game.startedAt)}
-							<a href="/view_game.html?id=${game.id}">${game.player0} vs. ${game.player1}</a>
+							<a href="/game.html?id=${game.id}">${game.player0} vs. ${game.player1}</a>
+							${gameStatus}
 							<br>
 						`;
 						listEl.insertAdjacentHTML('beforeend', html);

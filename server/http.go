@@ -21,7 +21,7 @@ func SetupHttpServer() {
 
 	app.Get("/api/games", func(c *fiber.Ctx) error {
 		var index []GameSession
-		err := db.Select(&index, "SELECT id, started_at, player0, player1 FROM games ORDER BY id LIMIT 1000")
+		err := db.Select(&index, "SELECT id, started_at, player0, player1, winner FROM games ORDER BY id DESC LIMIT 1000")
 
 		if err != nil {
 			log.Println(err)
@@ -33,7 +33,7 @@ func SetupHttpServer() {
 
 	app.Get("/api/game/:gameId", func(c *fiber.Ctx) error {
 		var game GameSession
-		err := db.Get(&game, "SELECT id, started_at, player0, player1 FROM games WHERE id = ?", c.Params("gameId"))
+		err := db.Get(&game, "SELECT id, started_at, player0, player1, winner FROM games WHERE id = ?", c.Params("gameId"))
 
 		if err != nil {
 			log.Println(err)
@@ -45,7 +45,7 @@ func SetupHttpServer() {
 
 	app.Get("/api/events/:gameId", func(c *fiber.Ctx) error {
 		var events []GameEvent
-		err := db.Select(&events, "SELECT player, message, happened_at, current_board, score FROM game_events WHERE game_id = ? ORDER BY id", c.Params("gameId"))
+		err := db.Select(&events, "SELECT player, message, happened_at, current_board, score FROM game_events WHERE game_id = ? ORDER BY id DESC", c.Params("gameId"))
 
 		if err != nil {
 			log.Println(err)
